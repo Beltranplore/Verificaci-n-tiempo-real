@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel de Verificación de Sellado</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background-color: #1c1c1c;
+      color: #e0e0e0;
+    }
+
+    nav {
+      background-color: #111;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 2px solid #00ff88;
+      flex-wrap: wrap;
+    }
+
+    nav h1 {
+      font-size: 1.5rem;
+      color: #00ff88;
+      margin: 0;
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .nav-buttons button {
+      background-color: #222;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      padding: 8px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .nav-buttons button:hover {
+      background-color: #00ff88;
+      color: #111;
+    }
+
+    main {
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    .btn-group {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button {
+      background: linear-gradient(#444, #222);
+      color: #fff;
+      border: 1px solid #888;
+      padding: 10px 18px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: linear-gradient(#666, #333);
+    }
+
+    input[type="file"] {
+      color: #ccc;
+    }
+
+    video,
+    canvas,
+    img {
+      margin-top: 1rem;
+      border-radius: 8px;
+      width: 100%;
+      max-width: 300px;
+      border: 5px solid #666;
+      background-color: #000;
+    }
+
+    #imagenMostrada.correcto {
+      border-color: #00ff00;
+    }
+
+    #imagenMostrada.defectuoso {
+      border-color: #ff4444;
+    }
+
+    #result {
+      margin-top: 1rem;
+      font-size: 1.3rem;
+      padding: 0.7rem 1rem;
+      border-radius: 6px;
+      font-weight: bold;
+      text-align: center;
+      white-space: pre-line;
+    }
+
+    #result.correcto {
+      color: #00ff00;
+    }
+
+    #result.defectuoso {
+      color: #ff4444;
+    }
+
+    .leyenda {
+      margin-top: 2rem;
+      max-width: 600px;
+      background-color: #292929;
+      border: 1px solid #555;
+      padding: 1rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    #Image-input {
+      text-align: center;
+      background-color: #666;
+      padding: 5px;
+      border-radius: 5px;
+    }
+
+    .leyenda span {
+      color: #00ff88;
+    }
+
+
+    @media (max-width: 600px) {
+      nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .btn-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      video,
+      canvas,
+      img {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav>
+    <h1>Verificacion de sellado</h1>
+    <div class="nav-buttons">
+      <button onclick="alert('Próximamente')">📊 Reportes</button>
+      <button onclick="alert('Próximamente')">📈 Índice de Calidad</button>
+      <button onclick="alert('Próximamente')">⚙️ Configuración</button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="btn-group">
+      <button onclick="activarCamara()">📷 Captura en Tiempo Real (Vivo)</button>
+      <button onclick="detenerCamara()">❌ Detener Cámara</button>
+      <div id="Image-input">
+        <input type="file" id="fileInput" accept="image/*" onchange="cargarImagen()" />
+      </div>
+    </div>
+
+    <audio id="alertaSonido" src="alerta.mp3" preload="auto"></audio>
+
+    <video id="video" autoplay muted playsinline style="display:none;"></video>
+    <canvas id="canvas" width="224" height="224" style="display:none;"></canvas>
+    <img id="imagenMostrada" style="display:none;" />
+
+    <div id="result"></div>
+    <div style="margin-top: 1rem;">
+      <label style="cursor:pointer;">
+        <input type="checkbox" id="modoTecnicoToggle" onchange="toggleModoTecnico()"> Mostrar datos técnicos
+      </label>
+    </div>
+    <div id="infoTecnica" style="margin-top: 1rem; display: none; font-size: 0.9rem; color: #aaa;">
+      ⏱ Latencia: <span id="latenciaMs">-</span> ms |
+      🎞 FPS: <span id="fpsValor">-</span>
+    </div>
+
+    <div class="leyenda">
+      <strong>🛈 ¿Cómo funciona esta herramienta?</strong><br />
+      Esta interfaz permite verificar el <span>sellado correcto o defectuoso</span> de empaques usando una red neuronal
+      convolucional entrenada con ejemplos reales.<br /><br />
+      <strong>Interpretación de resultados:</strong><br />
+      ✅ <strong>SELLADO CORRECTO:</strong> El modelo indica con confianza que el sellado es óptimo.<br />
+      ❌ <strong>SELLADO DEFECTUOSO:</strong> El modelo ha detectado anomalías visibles en el sellado.<br /><br />
+      Puedes cargar imágenes desde tu dispositivo o usar la cámara en tiempo real.
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script>
+    let model;
+    const video = document.getElementById("video");
+    const latencia = document.getElementById("latencia");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const result = document.getElementById("result");
+    const imagenMostrada = document.getElementById("imagenMostrada");
+
+    async function cargarModelo() {
+      model = await tf.loadGraphModel("modelado/model.json");
+      console.log("✅ Modelo cargado correctamente.");
+    }
+
+    async function activarCamara() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: "environment" } }
+        });
+        video.srcObject = stream;
+        video.style.display = "block";
+        imagenMostrada.style.display = "none";
+        analizarEnVivo();
+      } catch (error) {
+        console.error("No se pudo acceder a la cámara trasera. Usando configuración por defecto.", error);
+        // Fallback a cámara frontal si la trasera no está disponible
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = fallbackStream;
+        video.style.display = "block";
+        imagenMostrada.style.display = "none";
+        analizarEnVivo();
+      }
+    }
+
+
+    function detenerCamara() {
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach((track) => track.stop());
+        video.srcObject = null;
+        video.style.display = "none";
+      }
+    }
+
+    function cargarImagen() {
+      const file = document.getElementById("fileInput").files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = async function () {
+          ctx.drawImage(img, 0, 0, 224, 224);
+          imagenMostrada.src = canvas.toDataURL();
+          imagenMostrada.style.display = "block";
+          video.style.display = "none";
+          await analizarImagen(canvas);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    let ultimaPrediccion = performance.now();
+    let fps = 0;
+
+    async function analizarEnVivo() {
+      if (!video.srcObject) return;
+
+      const inicio = performance.now();
+
+      ctx.drawImage(video, 0, 0, 224, 224);
+      await analizarImagen(canvas);
+
+      const fin = performance.now();
+      const latencia = (fin - inicio).toFixed(1);
+      document.getElementById("latenciaMs").textContent = latencia;
+
+      // Calcular FPS basado en el tiempo desde la última predicción
+      const ahora = performance.now();
+      fps = (1000 / (ahora - ultimaPrediccion)).toFixed(1);
+      ultimaPrediccion = ahora;
+      document.getElementById("fpsValor").textContent = fps;
+
+      setTimeout(analizarEnVivo, 1500);
+    }
+
+    function toggleModoTecnico() {
+      const visible = document.getElementById("modoTecnicoToggle").checked;
+      document.getElementById("infoTecnica").style.display = visible ? "block" : "none";
+    }
+
+
+    async function analizarImagen(canvasRef) {
+      const tensor = tf.browser
+        .fromPixels(canvasRef)
+        .resizeNearestNeighbor([224, 224])
+        .toFloat()
+        .div(255.0)
+        .expandDims();
+
+      const prediction = await model.executeAsync(tensor);
+      const value = prediction.dataSync()[0];
+      const porcentaje = (value * 100).toFixed(2);
+
+      if (value < 0.5) {
+        result.textContent = `SELLADO CORRECTO✅\nConfianza: ${(100 - porcentaje).toFixed(2)}%`;
+        result.className = "correcto";
+        imagenMostrada.className = "correcto";
+      } else {
+        result.textContent = `SELLADO DEFECTUOSO❌\nConfianza: ${porcentaje}%`;
+        result.className = "defectuoso";
+        imagenMostrada.className = "defectuoso";
+
+        // 🔊 Reproducir sonido de alerta
+        const sonido = document.getElementById("alertaSonido");
+        sonido.currentTime = 0;
+        sonido.play();
+      }
+
+      tf.dispose([tensor, prediction]);
+    }
+
+    cargarModelo();
+  </script>
+</body>
+
+</html>
