@@ -12,14 +12,6 @@
       background-color: #1c1c1c;
       color: #e0e0e0;
     }
-      
-    #video.correcto {
-        border-color: #00ff00;
-    }
-
-    #video.defectuoso {
-        border-color: #ff4444;
-    }
 
     nav {
       background-color: #111;
@@ -110,6 +102,14 @@
     }
 
     #imagenMostrada.defectuoso {
+      border-color: #ff4444;
+    }
+
+    #video.correcto {
+      border-color: #00ff00;
+    }
+
+    #video.defectuoso {
       border-color: #ff4444;
     }
 
@@ -262,6 +262,7 @@
         video.srcObject.getTracks().forEach((track) => track.stop());
         video.srcObject = null;
         video.style.display = "none";
+        video.className = "";
       }
     }
 
@@ -276,6 +277,7 @@
           imagenMostrada.src = canvas.toDataURL();
           imagenMostrada.style.display = "block";
           video.style.display = "none";
+          video.className = "";
           await analizarImagen(canvas);
         };
         img.src = e.target.result;
@@ -326,18 +328,20 @@
       const porcentaje = (value * 100).toFixed(2);
 
       if (value < 0.5) {
-          result.textContent = `SELLADO CORRECTO✅\nConfianza: ${(100 - porcentaje).toFixed(2)}%`;
-          result.className = "correcto";
-          imagenMostrada.className = "correcto";
-          video.className = "correcto"; // ✅ Agregado
+        result.textContent = `SELLADO CORRECTO✅\nConfianza: ${(100 - porcentaje).toFixed(2)}%`;
+        result.className = "correcto";
+        imagenMostrada.className = "correcto";
+        video.className = "correcto";
       } else {
-          result.textContent = `SELLADO DEFECTUOSO❌\nConfianza: ${porcentaje}%`;
-          result.className = "defectuoso";
-          imagenMostrada.className = "defectuoso";
-          video.className = "defectuoso"; // ✅ Agregado
-          const sonido = document.getElementById("alertaSonido");
-          sonido.currentTime = 0;
-          sonido.play();
+        result.textContent = `SELLADO DEFECTUOSO❌\nConfianza: ${porcentaje}%`;
+        result.className = "defectuoso";
+        imagenMostrada.className = "defectuoso";
+        video.className = "defectuoso";
+
+        // 🔊 Reproducir sonido de alerta
+        const sonido = document.getElementById("alertaSonido");
+        sonido.currentTime = 0;
+        sonido.play();
       }
 
       tf.dispose([tensor, prediction]);
